@@ -24,3 +24,85 @@
     <script src="script.js"></script>
 </body>
 </html>
+
+body {
+    background-color: black;
+    color: white;
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.container {
+    text-align: center;
+    border: 2px solid white;
+    padding: 20px;
+    border-radius: 10px;
+    max-width: 400px;
+}
+
+.product-description {
+    margin-bottom: 20px;
+}
+
+input {
+    padding: 10px;
+    margin: 10px 0;
+    width: 100%;
+    max-width: 300px;
+}
+
+#paypal-button-container {
+    margin-top: 20px;
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    // Your Firebase configuration
+    var firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_PROJECT_ID.appspot.com",
+        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+        appId: "YOUR_APP_ID"
+    };
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    var db = firebase.firestore();
+
+    // Save email to Firestore
+    function saveEmail(email) {
+        db.collection("emails").add({
+            email: email
+        })
+        .then(function() {
+            console.log("Email saved successfully!");
+        })
+        .catch(function(error) {
+            console.error("Error saving email: ", error);
+        });
+    }
+
+    // PayPal button integration
+    paypal.Buttons({
+        createOrder: function(data, actions) {
+            return actions.order.create({
+                purchase_units: [{
+                    amount: {
+                        value: '10.00' // Price of the coupon
+                    }
+                }]
+            });
+        },
+        onApprove: function(data, actions) {
+            return actions.order.capture().then(function(details) {
+                const email = document.getElementById('email').value;
+                alert('Transaction completed by ' + details.payer.name.given_name);
+                saveEmail(email);
+            });
+        }
+    }).render('#paypal-button-container');
+});
